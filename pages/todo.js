@@ -1,8 +1,6 @@
 import Todo from '@/components/Todo';
 import { useState } from 'react';
 
-const ll = [1, 2, 3];
-
 function TodoList() {
   const [list, setList] = useState([]);
   const [title, setTitle] = useState('');
