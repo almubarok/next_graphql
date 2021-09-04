@@ -1,9 +1,29 @@
 import Todo from '@/components/Todo';
 import { useState } from 'react';
+import { useQuery, gql } from '@apollo/client';
+import LoadingSVG from '@/components/svg/loading';
+
+const Query = gql`
+  query MyQuery {
+    todolist {
+      id
+      title
+      is_done
+    }
+  }
+`;
 
 function TodoList() {
-  const [list, setList] = useState([]);
+  const { data, loading, error } = useQuery(Query);
   const [title, setTitle] = useState('');
+  if (loading) {
+    return <LoadingSVG />;
+  }
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
 
   const onChangeTitle = e => {
     if (e.target) {
@@ -13,35 +33,25 @@ function TodoList() {
 
   const onSubmitList = e => {
     e.preventDefault();
-    setList(prev => [...prev, { checked: false, title }]);
-    setTitle('');
-    console.log(list);
   };
 
-  const onClickItem = idx => {
-    const newList = [...list];
-    newList[idx].checked = !newList[idx].checked;
-    setList(newList);
-  };
+  const onClickItem = idx => {};
 
-  const onDeleteItem = idx => {
-    const newList = list.filter((_, i) => i != idx);
-    setList(newList);
-  };
+  const onDeleteItem = idx => {};
 
   return (
     <>
       <div className="container">
         <h1 className="app-title">todos</h1>
         <ul className="todo-list js-todo-list">
-          {list.map((v, i) => (
+          {data?.todolist.map((v, i) => (
             <Todo
               key={i}
               id={i}
               onClickItem={() => onClickItem(i)}
               onDeleteItem={() => onDeleteItem(i)}
               title={v.title}
-              checked={v.checked}
+              checked={v.is_done}
             />
           ))}
         </ul>
