@@ -1,9 +1,9 @@
 import Todo from '@/components/Todo';
 import { useState } from 'react';
-import { useQuery, gql } from '@apollo/client';
+import { useQuery, useMutation, gql } from '@apollo/client';
 import LoadingSVG from '@/components/svg/loading';
 
-const Query = gql`
+const GetQuery = gql`
   query MyQuery {
     todolist {
       id
@@ -13,10 +13,41 @@ const Query = gql`
   }
 `;
 
+const InsertQuery = gql`
+  mutation InsertTodo($object: todolist_insert_input!) {
+    insert_todolist_one(object: $object) {
+      id
+    }
+  }
+`;
+
+const UpdateQuery = gql`
+  mutation UpdateTodo($id: Int!, $is_done: Boolean) {
+    update_todolist_by_pk(
+      pk_columns: { id: $id }
+      _set: { is_done: $is_done }
+    ) {
+      id
+    }
+  }
+`;
+
+const DeleteQuery = gql`
+  mutation DeleteTodo($id: Int!) {
+    delete_todolist_by_pk(id: $id) {
+      id
+    }
+  }
+`;
+
 function TodoList() {
-  const { data, loading, error } = useQuery(Query);
+  const { data, loading, error, refetch } = useQuery(GetQuery);
+  const [insertTodo, { loading: loadingInsert }] = useMutation(InsertQuery);
+  const [updateTodo, { loading: loadingUpdate }] = useMutation(UpdateQuery);
+  const [deleteTodo, { loading: loadingDelete }] = useMutation(DeleteQuery);
   const [title, setTitle] = useState('');
-  if (loading) {
+
+  if (loading || loadingInsert || loadingUpdate || loadingDelete) {
     return <LoadingSVG />;
   }
 
@@ -31,25 +62,51 @@ function TodoList() {
     }
   };
 
-  const onSubmitList = e => {
+  const onSubmitList = async e => {
     e.preventDefault();
+    await insertTodo({
+      variables: {
+        object: {
+          title,
+          user_id: 1,
+        },
+      },
+    });
+    refetch();
+    setTitle('');
   };
 
-  const onClickItem = idx => {};
+  const onClickItem = async idx => {
+    const item = data?.todolist.find(v => v.id === idx);
+    await updateTodo({
+      variables: {
+        id: item.id,
+        is_done: !item.is_done,
+      },
+    });
+    refetch();
+  };
 
-  const onDeleteItem = idx => {};
+  const onDeleteItem = async idx => {
+    await deleteTodo({
+      variables: {
+        id: idx,
+      },
+    });
+    refetch();
+  };
 
   return (
     <>
       <div className="container">
         <h1 className="app-title">todos</h1>
         <ul className="todo-list js-todo-list">
-          {data?.todolist.map((v, i) => (
+          {data?.todolist.map(v => (
             <Todo
-              key={i}
-              id={i}
-              onClickItem={() => onClickItem(i)}
-              onDeleteItem={() => onDeleteItem(i)}
+              key={v.id}
+              id={v.id}
+              onClickItem={() => onClickItem(v.id)}
+              onDeleteItem={() => onDeleteItem(v.id)}
               title={v.title}
               checked={v.is_done}
             />
