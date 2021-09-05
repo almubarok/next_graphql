@@ -1,6 +1,6 @@
 import Todo from '@/components/Todo';
 import { useState } from 'react';
-import { useQuery, useMutation, gql } from '@apollo/client';
+import { useQuery, useMutation, gql, useSubscription } from '@apollo/client';
 import LoadingSVG from '@/components/svg/loading';
 
 const GetQuery = gql`
@@ -40,11 +40,22 @@ const DeleteQuery = gql`
   }
 `;
 
+const SubscriptionTodolist = gql`
+  subscription MySubscription {
+    todolist {
+      id
+      is_done
+      title
+    }
+  }
+`;
+
 function TodoList() {
-  const { data, loading, error, refetch } = useQuery(GetQuery);
+  // const { data, loading, error, refetch } = useQuery(GetQuery);
   const [insertTodo, { loading: loadingInsert }] = useMutation(InsertQuery);
   const [updateTodo, { loading: loadingUpdate }] = useMutation(UpdateQuery);
   const [deleteTodo, { loading: loadingDelete }] = useMutation(DeleteQuery);
+  const { data, loading, error } = useSubscription(SubscriptionTodolist);
   const [title, setTitle] = useState('');
 
   if (loading || loadingInsert || loadingUpdate || loadingDelete) {
@@ -72,7 +83,7 @@ function TodoList() {
         },
       },
     });
-    refetch();
+    // refetch();
     setTitle('');
   };
 
@@ -84,7 +95,7 @@ function TodoList() {
         is_done: !item.is_done,
       },
     });
-    refetch();
+    // refetch();
   };
 
   const onDeleteItem = async idx => {
@@ -93,7 +104,7 @@ function TodoList() {
         id: idx,
       },
     });
-    refetch();
+    // refetch();
   };
 
   return (
